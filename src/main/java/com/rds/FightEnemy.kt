@@ -16,10 +16,10 @@ class FightEnemy: JavaDelegate {
 
         if (Random.nextBoolean()) {
             enemyWarriors--
-            println("Вражеский воин убит!")
+            println("Вражеский воин убит! ($enemyWarriors vs ${army.size})")
         } else {
             army.removeLast()
-            println("Наш воин убит!")
+            println("Наш воин убит! ($enemyWarriors vs ${army.size})")
         }
 
         delegateExecution.setVariable("enemyWarriors", enemyWarriors)
