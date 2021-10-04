@@ -4,6 +4,11 @@ import com.rds.dao.Warrior
 import org.camunda.bpm.engine.delegate.BpmnError
 import org.camunda.bpm.engine.delegate.DelegateExecution
 import org.camunda.bpm.engine.delegate.JavaDelegate
+import org.camunda.connect.Connectors
+import org.camunda.connect.httpclient.HttpConnector
+import org.camunda.connect.httpclient.HttpRequest
+import org.camunda.spin.Spin.JSON
+import org.camunda.spin.json.SpinJsonNode
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.util.*
@@ -11,6 +16,9 @@ import kotlin.collections.ArrayList
 
 @Component
 class PrepareToBattle: JavaDelegate {
+
+    @Value(value = "\${url}")
+    val url: String = ""
 
     @Value(value = "\${maxWarriors}")
     var maxWarriors: Int = 100
@@ -21,12 +29,45 @@ class PrepareToBattle: JavaDelegate {
 
         if (warriors <0 || warriors > maxWarriors)  throw BpmnError("warriorsError")
 
-        var army: MutableList<Boolean> = ArrayList(Collections.nCopies(warriors, true))
+        var army: MutableList<Warrior> = ArrayList()
+
+        for (i in 0..maxWarriors) {
+            army.add(createWarrior())
+        }
+
 
         println("Подготовка к битве! Врагов = $enemyWarriors против нашей армии = $warriors")
 
         delegateExecution.setVariable("enemyWarriors", enemyWarriors)
         delegateExecution.setVariable("army",army)
     }
+
+    private fun createWarrior(): Warrior {
+        lateinit var warrior: Warrior
+        val http: HttpConnector =  Connectors.getConnector(HttpConnector.ID)
+        val request: HttpRequest = http.createRequest().get().url(url)
+
+        val headers = mutableMapOf<String,String>()
+        headers["headers"] = "application/json"
+
+        request.setRequestParameter("headers", headers)
+
+        val response = request.execute()
+
+        if (response.statusCode == 200){
+            val node: SpinJsonNode = JSON(response.response)
+            warrior = Warrior(
+                name = node.prop("name.findName").stringValue(),
+                title = node.prop("name.title").stringValue(),
+                hp = Integer.parseInt(node.prop("random.number").stringValue()),
+                isAlive = true
+            )
+        }
+
+        response.close()
+
+        return warrior
+    }
+
 
 }
