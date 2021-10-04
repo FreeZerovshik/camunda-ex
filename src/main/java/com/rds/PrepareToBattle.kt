@@ -4,6 +4,7 @@ import com.rds.dao.Warrior
 import org.camunda.bpm.engine.delegate.BpmnError
 import org.camunda.bpm.engine.delegate.DelegateExecution
 import org.camunda.bpm.engine.delegate.JavaDelegate
+import org.camunda.bpm.engine.variable.Variables
 import org.camunda.connect.Connectors
 import org.camunda.connect.httpclient.HttpConnector
 import org.camunda.connect.httpclient.HttpRequest
@@ -31,15 +32,16 @@ class PrepareToBattle: JavaDelegate {
 
         var army: MutableList<Warrior> = ArrayList()
 
-        for (i in 0..maxWarriors) {
+        for (i in 1..warriors) {
             army.add(createWarrior())
         }
 
-
-        println("Подготовка к битве! Врагов = $enemyWarriors против нашей армии = $warriors")
+        val armyJson = Variables.objectValue(army).serializationDataFormat("application/json").create()
+        println("Подготовка к битве! Врагов = $enemyWarriors против нашей армии = ${army.size}")
 
         delegateExecution.setVariable("enemyWarriors", enemyWarriors)
         delegateExecution.setVariable("army",army)
+        delegateExecution.setVariable("armyJson",armyJson)
     }
 
     private fun createWarrior(): Warrior {
